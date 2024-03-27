@@ -17,9 +17,16 @@ async function main() {
   const create3FactoryArtifact = getCreate3FactoryArtifact(factoryToDeploy)
   const gasLimit = getGasLimit(factoryToDeploy)
 
-  const { deployKeylessly } = require(`./keyless-deploy-functions`)
-  const address = await deployKeylessly(create3FactoryArtifact.contractName, create3FactoryArtifact.bytecode, gasLimit, wallet, isDeployEnabled)
+  // const { deployKeylessly } = require(`./keyless-deploy-functions`)
+  // const address = await deployKeylessly(create3FactoryArtifact.contractName, create3FactoryArtifact.bytecode, gasLimit, wallet, isDeployEnabled)
 
+  // deploy using create2 factory at 0x4e59b44847b379578588920cA78FbF26c0B4956C
+  const create2FactoryAddress = `0x4e59b44847b379578588920cA78FbF26c0B4956C`
+  const salt = ethers.id(factoryToDeploy);
+  const data = salt + create3FactoryArtifact.bytecode.slice(2);
+  const address = ethers.getCreate2Address(create2FactoryAddress, salt, ethers.keccak256(create3FactoryArtifact.bytecode));
+  console.log(`Deploying CREATE3Factory contract at address: ${address}`)
+  await wallet.sendTransaction({ to: create2FactoryAddress, data: data, gasLimit })
 
   // VERIFY ON BLOCKCHAIN EXPLORER
   if (isVerifyEnabled && factoryToDeploy !== `SKYBITLite` && ![`hardhat`, `localhost`].includes(network.name)) {
